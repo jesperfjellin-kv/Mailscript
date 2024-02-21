@@ -31,3 +31,6 @@ python-docx (conda install conda-forge::python-docx)
 
 tkinter (conda install anaconda::tk)
 
+**Eksempelfiler**
+
+Eksempelfiler er lagt med i repoet. Filene inneholder ingen identifiserende informasjon.
