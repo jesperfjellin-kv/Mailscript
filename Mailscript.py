@@ -16,7 +16,17 @@ def read_docx_template(file_path):
     try:
         doc = Document(file_path)
         subject = doc.paragraphs[0].text
-        body = "\n".join(para.text for para in doc.paragraphs[1:] if para.text)
+        body_elements = []
+        
+        for para in doc.paragraphs[1:]:
+            if para.text.strip():  
+                if para.style.name.startswith('List'):
+                    body_elements.append(f"- {para.text}\n")
+                else:
+                    body_elements.append(f"{para.text}\n\n")
+
+        body = "".join(body_elements).rstrip()
+
         return subject, body
     except Exception as e:
         messagebox.showerror("Error", f"Error reading document: {e}")
@@ -51,18 +61,16 @@ def show_mail_preview(subject, body):
     preview_window = tk.Toplevel()
     preview_window.title("Mail Preview")
 
-    # Create a non-editable text widget for the email preview.
     preview_text = tk.Text(preview_window, height=20, width=60, wrap='word')
     preview_text.pack(fill='both', expand=True, padx=5, pady=5)
 
-    # Construct the content with subject and body.
     preview_content = f"Subject: {subject}\n\nBody:\n{body}"
     
-    # Insert the content into the text widget and disable it to make it read-only.
     preview_text.insert('end', preview_content)
     preview_text.config(state='disabled')
-
-    # Start the event loop.
+    
+    preview_window.lift()  # Attempt to bring the window to the front
+    preview_window.focus_force()  # Forcefully set the focus to the window
     preview_window.mainloop()
 
 
@@ -71,7 +79,7 @@ def show_confirmation_dialog(email_details, subject, body):
     confirmation_window = tk.Tk()
     confirmation_window.title("Confirmation")
 
-    text_area = Text(confirmation_window, height=15, width=50)
+    text_area = Text(confirmation_window, height=15, width=80)
     text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     text_area.insert(tk.END, "Recipients and their attachments:\n\n")
     for email, attachment in email_details:
@@ -95,13 +103,18 @@ def show_confirmation_dialog(email_details, subject, body):
     def on_preview():
         preview_window = tk.Toplevel(confirmation_window)
         preview_window.title("Email Preview")
-        Text(preview_window, height=20, width=60, wrap="word").pack(fill=tk.BOTH, expand=True)
-        # Example content, replace with actual content for preview
-        preview_content = f"Subject: {subject}\n\nBody:\n{body}"
+
+        # Create one Text widget for the email preview.
         preview_text = tk.Text(preview_window, height=20, width=60, wrap="word")
         preview_text.pack(fill=tk.BOTH, expand=True)
+
+        # Insert the subject and body into the Text widget for preview.
+        preview_content = f"Subject: {subject}\n\nBody:\n{body}"
         preview_text.insert(tk.END, preview_content)
-        preview_text.config(state=tk.DISABLED)
+
+        # Disable the Text widget to make it read-only.
+        #preview_text.config(state=tk.DISABLED)
+
 
     button_frame = tk.Frame(confirmation_window)
     button_frame.pack(fill=tk.X, padx=5, pady=5)
@@ -110,11 +123,15 @@ def show_confirmation_dialog(email_details, subject, body):
     tk.Button(button_frame, text="No", command=on_no).pack(side=tk.TOP, fill=tk.X)
     tk.Button(button_frame, text="Preview", command=on_preview).pack(side=tk.TOP, fill=tk.X)
 
+    confirmation_window.lift()  # Attempt to bring the window to the front
+    confirmation_window.focus_force()  # Forcefully set the focus to the window
     confirmation_window.mainloop()
 
 def main():
     global user_confirmation
+    user_confirmation = False  # Initialize the variable here
     template_file_path = select_docx_template()
+    
     if not template_file_path:
         print("No file was selected.")
         return
@@ -124,7 +141,7 @@ def main():
         print("Error loading the template. Please check the file and try again.")
         return
 
-    df = pd.read_csv(os.path.join(RECIPIENTS_DIR, 'recipients.csv'))
+    df = pd.read_csv(os.path.join(RECIPIENTS_DIR, 'recipients_test.csv'))
     email_details = []
 
     for index, row in df.iterrows():
@@ -137,17 +154,18 @@ def main():
 
     if email_details:
         show_confirmation_dialog(email_details, subject, body)
-        if user_confirmation:
+        
+        if user_confirmation:  # Check if user confirmed to send emails
             for email, attachment in email_details:
                 try:
                     email_message = create_email(email, attachment, subject, body)
                     email_message.Send()
                     print(f"Email sent to {email} with attachment {os.path.basename(attachment)}")
                 except Exception as e:
-                   print(f"Could not send email to {email}: {e}")
-        print("All emails have been sent.")
-    else:
-           print("Sending cancelled.")
+                    print(f"Could not send email to {email}: {e}")
+            print("All emails have been sent.")  # This should be inside the if block
+        else:
+            print("Sending cancelled.")  # This is correctly placed
 
 if __name__ == "__main__":
     main()
