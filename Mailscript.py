@@ -11,6 +11,7 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATES_DIR = os.path.join(BASE_DIR, 'Templates')
 RECIPIENTS_DIR = os.path.join(BASE_DIR, 'Recipients')
 FILES_TO_SEND_DIR = os.path.join(BASE_DIR, 'FilesToSend')
+SIGNATURES_DIR = os.path.join(BASE_DIR, 'Signatures')
 
 def read_docx_template(file_path):
     try:
@@ -69,8 +70,8 @@ def show_mail_preview(subject, body):
     preview_text.insert('end', preview_content)
     preview_text.config(state='disabled')
     
-    preview_window.lift()  # Attempt to bring the window to the front
-    preview_window.focus_force()  # Forcefully set the focus to the window
+    preview_window.lift()  
+    preview_window.focus_force()  
     preview_window.mainloop()
 
 
@@ -104,15 +105,15 @@ def show_confirmation_dialog(email_details, subject, body):
         preview_window = tk.Toplevel(confirmation_window)
         preview_window.title("Email Preview")
 
-        # Create one Text widget for the email preview.
+        
         preview_text = tk.Text(preview_window, height=20, width=60, wrap="word")
         preview_text.pack(fill=tk.BOTH, expand=True)
 
-        # Insert the subject and body into the Text widget for preview.
+        
         preview_content = f"Subject: {subject}\n\nBody:\n{body}"
         preview_text.insert(tk.END, preview_content)
 
-        # Disable the Text widget to make it read-only.
+        # Gjør tekstfeltet i preview read-only
         #preview_text.config(state=tk.DISABLED)
 
 
@@ -123,13 +124,13 @@ def show_confirmation_dialog(email_details, subject, body):
     tk.Button(button_frame, text="No", command=on_no).pack(side=tk.TOP, fill=tk.X)
     tk.Button(button_frame, text="Preview", command=on_preview).pack(side=tk.TOP, fill=tk.X)
 
-    confirmation_window.lift()  # Attempt to bring the window to the front
-    confirmation_window.focus_force()  # Forcefully set the focus to the window
+    confirmation_window.lift()  
+    confirmation_window.focus_force()  
     confirmation_window.mainloop()
 
 def main():
     global user_confirmation
-    user_confirmation = False  # Initialize the variable here
+    user_confirmation = False  
     template_file_path = select_docx_template()
     
     if not template_file_path:
@@ -141,7 +142,7 @@ def main():
         print("Error loading the template. Please check the file and try again.")
         return
 
-    df = pd.read_csv(os.path.join(RECIPIENTS_DIR, 'recipients_test.csv'))
+    df = pd.read_csv(os.path.join(RECIPIENTS_DIR, 'recipients.csv'))
     email_details = []
 
     for index, row in df.iterrows():
@@ -155,7 +156,7 @@ def main():
     if email_details:
         show_confirmation_dialog(email_details, subject, body)
         
-        if user_confirmation:  # Check if user confirmed to send emails
+        if user_confirmation:  
             for email, attachment in email_details:
                 try:
                     email_message = create_email(email, attachment, subject, body)
@@ -163,9 +164,9 @@ def main():
                     print(f"Email sent to {email} with attachment {os.path.basename(attachment)}")
                 except Exception as e:
                     print(f"Could not send email to {email}: {e}")
-            print("All emails have been sent.")  # This should be inside the if block
+            print("All emails have been sent.")  
         else:
-            print("Sending cancelled.")  # This is correctly placed
+            print("Sending cancelled.")  
 
 if __name__ == "__main__":
     main()
